@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1f6f43">
+<meta name="format-detection" content="telephone=no">
+<title>Tommy's 50th — Golf Scorekeeper</title>
+<style>
+  :root{
+    --green:#1f6f43;
+    --green-dark:#154d2e;
+    --gold:#e8b923;
+    --cream:#fbf6e9;
+    --ink:#1c2b1f;
+    --grey:#6b7a6e;
+    --line:#d8e0d6;
+    --ace:#b8009a;
+    --eagle:#caa400;
+    --birdie:#c0392b;
+    --par:#1c2b1f;
+    --bogey:#2f6fb5;
+    --dbogey:#5a3fa0;
+    --triple:#7a3b22;
+    --other:#8a8a8a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  header{
+    background:linear-gradient(135deg,var(--green),var(--green-dark));
+    color:white;
+    padding:calc(18px + env(safe-area-inset-top, 0px)) 16px 14px;
+    text-align:center;
+  }
+  header h1{
+    margin:0;
+    font-size:1.25rem;
+    letter-spacing:.5px;
+  }
+  header p{
+    margin:4px 0 0;
+    font-size:.8rem;
+    opacity:.85;
+  }
+  .sound-toggle{
+    margin-top:10px;
+    padding:9px 16px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.4);
+    background:rgba(255,255,255,.12);
+    color:white;
+    font-size:.78rem;
+    font-weight:700;
+    cursor:pointer;
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  .sound-toggle:active{background:rgba(255,255,255,.28);}
+  .sound-toggle.off{
+    background:rgba(0,0,0,.18);
+    color:rgba(255,255,255,.6);
+    border-color:rgba(255,255,255,.2);
+  }
+  nav{
+    display:flex;
+    background:var(--green-dark);
+  }
+  nav button{
+    flex:1;
+    padding:12px 6px;
+    background:transparent;
+    border:none;
+    color:rgba(255,255,255,.65);
+    font-size:.85rem;
+    font-weight:600;
+    border-bottom:3px solid transparent;
+  }
+  nav button.active{
+    color:white;
+    border-bottom:3px solid var(--gold);
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:14px 14px 60px;
+  }
+  .card{
+    background:white;
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,.08);
+    border:1px solid var(--line);
+  }
+  select, input[type=text]{
+    width:100%;
+    padding:12px;
+    font-size:1rem;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--cream);
+    color:var(--ink);
+  }
+  label.field-label{
+    display:block;
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--grey);
+    margin-bottom:6px;
+    font-weight:700;
+  }
+  .group-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:10px;
+    font-size:.85rem;
+    color:var(--grey);
+  }
+  .group-meta strong{color:var(--ink);}
+  .hole-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .hole-row:last-child{border-bottom:none;}
+  .hole-id{
+    width:74px;
+    flex-shrink:0;
+  }
+  .hole-id .num{font-weight:800;font-size:1.05rem;}
+  .hole-id .par{font-size:.7rem;color:var(--grey);text-transform:uppercase;letter-spacing:.05em;}
+  .hole-id .yds{font-size:.72rem;color:var(--green-dark);font-weight:700;}
+  .hole-id .yds .unit{color:var(--grey);font-weight:600;}
+  .stepper{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .stepper button{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--cream);
+    font-size:1.2rem;
+    font-weight:700;
+    color:var(--green-dark);
+    line-height:1;
+  }
+  .stepper button:active{background:var(--line);}
+  .stepper .score-val{
+    width:34px;
+    text-align:center;
+    font-size:1.15rem;
+    font-weight:800;
+  }
+  .badge{
+    margin-left:auto;
+    min-width:96px;
+    text-align:center;
+    padding:6px 8px;
+    border-radius:8px;
+    font-size:.72rem;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:white;
+  }
+  .badge.empty{background:var(--line);color:var(--grey);}
+  .badge.ace{background:linear-gradient(135deg,var(--ace),#7a0066);box-shadow:0 0 0 2px var(--gold) inset;}
+  .badge.eagle{background:var(--eagle);}
+  .badge.birdie{background:var(--birdie);}
+  .badge.par{background:var(--par);}
+  .badge.bogey{background:var(--bogey);}
+  .badge.dbogey{background:var(--dbogey);}
+  .badge.triple{background:var(--triple);}
+  .badge.other{background:var(--other);}
+  .totals{
+    display:flex;
+    justify-content:space-around;
+    text-align:center;
+    margin-top:6px;
+  }
+  .totals div .big{font-size:1.6rem;font-weight:800;}
+  .totals div .small{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--grey);}
+  .btn{
+    display:block;
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    font-size:1rem;
+    font-weight:700;
+    margin-top:10px;
+    color:white;
+    background:var(--green);
+  }
+  .btn.secondary{
+    background:white;
+    color:var(--green-dark);
+    border:2px solid var(--green);
+  }
+  .btn.gold{
+    background:var(--gold);
+    color:var(--ink);
+  }
+  .lb-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .lb-row:last-child{border-bottom:none;}
+  .lb-rank{
+    font-weight:800;
+    font-size:1.2rem;
+    color:var(--green-dark);
+    width:28px;
+    text-align:center;
+  }
+  .lb-row.gold-rank .lb-rank{color:var(--gold);}
+  .lb-info{flex:1;}
+  .lb-info .gname{font-weight:700;}
+  .lb-info .gplayers{font-size:.74rem;color:var(--grey);}
+  .lb-score{
+    text-align:right;
+    min-width:64px;
+  }
+  .lb-score .rel{font-weight:800;font-size:1.05rem;}
+  .lb-score .strokes{font-size:.72rem;color:var(--grey);}
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:8px;
+  }
+  .legend span{
+    font-size:.7rem;
+    font-weight:700;
+    color:white;
+    padding:4px 8px;
+    border-radius:6px;
+  }
+  .note{
+    font-size:.8rem;
+    color:var(--grey);
+    line-height:1.5;
+    margin-top:6px;
+  }
+  h2.section-title{
+    font-size:.95rem;
+    margin:0 0 4px;
+    color:var(--green-dark);
+  }
+  textarea{
+    width:100%;
+    min-height:90px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--cream);
+    padding:10px;
+    font-family:inherit;
+    font-size:.85rem;
+    color:var(--ink);
+  }
+  .roster-group{
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .roster-group:last-child{border-bottom:none;}
+  .roster-group .gname{font-weight:700;}
+  .roster-group .gtime{color:var(--grey);font-size:.8rem;}
+  .roster-group ul{margin:6px 0 0;padding-left:18px;font-size:.85rem;}
+  footer{
+    text-align:center;
+    font-size:.72rem;
+    color:var(--grey);
+    padding:18px 14px 30px;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <header>
+    <h1>🏌️ Should of Been a Birdie</h1>
+    <p>Tommy Gunz's 50th Birthday Golf Outing — Scorekeeper</p>
+    <button id="soundToggle" type="button" class="sound-toggle">🔊 Sound: On</button>
+  </header>
+
+  <nav>
+    <button class="tab-btn active" data-tab="score">Enter Score</button>
+    <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+    <button class="tab-btn" data-tab="roster">Tee Sheet</button>
+  </nav>
+</div>
+
+<main>
+
+  <!-- ===================== SCORE ENTRY TAB ===================== -->
+  <section id="tab-score">
+    <div class="card">
+      <label class="field-label">Your Group</label>
+      <select id="groupSelect"></select>
+      <div class="group-meta">
+        <span>Tee time: <strong id="groupTime">—</strong></span>
+        <span id="groupPlayers"></span>
+      </div>
+      <label class="field-label" style="margin-top:12px;">Tees Playing</label>
+      <select id="teeSelect"></select>
+      <div class="group-meta">
+        <span>Course: <strong>Douglaston Park · Par 67</strong></span>
+        <span id="teeMeta"></span>
+      </div>
+      <p class="note">Enter your foursome's <strong>best-ball score</strong> for each hole — the lowest single score among your four golfers on that hole. The app labels it automatically (eagle, birdie, par, bogey, double bogey, etc.) — and plays a sound to match, straight from the birthday guy himself when his voice clips are loaded (otherwise a synth fanfare/trombone steps in). Toggle sound on/off with the button up top.</p>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Front Nine</h2>
+      <div id="frontNine"></div>
+      <div class="totals">
+        <div><div class="big" id="frontStrokes">–</div><div class="small">Strokes</div></div>
+        <div><div class="big" id="frontRel">–</div><div class="small" id="frontParLbl">Vs. Par</div></div>
+        <div><div class="big" id="frontYards">–</div><div class="small">Yards</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Back Nine</h2>
+      <div id="backNine"></div>
+      <div class="totals">
+        <div><div class="big" id="backStrokes">–</div><div class="small">Strokes</div></div>
+        <div><div class="big" id="backRel">–</div><div class="small" id="backParLbl">Vs. Par</div></div>
+        <div><div class="big" id="backYards">–</div><div class="small">Yards</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Round Total</h2>
+      <div class="totals">
+        <div><div class="big" id="totalStrokes">–</div><div class="small">Total Strokes</div></div>
+        <div><div class="big" id="totalRel">–</div><div class="small" id="totalParLbl">Vs. Par</div></div>
+        <div><div class="big" id="totalHoles">0/18</div><div class="small">Holes In</div></div>
+      </div>
+      <button class="btn" id="saveBtn">Save This Card</button>
+      <button class="btn secondary" id="shareBtn">Share / Text Card to Organizer</button>
+      <p class="note">Scores save right on this phone. To get on the master leaderboard, tap <strong>Share</strong> after each nine (or at the end) and send the summary to whoever's running the leaderboard — they'll paste it into the Leaderboard tab.</p>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Scoring Key</h2>
+      <div class="legend">
+        <span class="badge ace" style="margin:0;">Hole in One (1)</span>
+        <span class="badge eagle" style="margin:0;">Eagle (-2)</span>
+        <span class="badge birdie" style="margin:0;">Birdie (-1)</span>
+        <span class="badge par" style="margin:0;">Par (E)</span>
+        <span class="badge bogey" style="margin:0;">Bogey (+1)</span>
+        <span class="badge dbogey" style="margin:0;">Double Bogey (+2)</span>
+        <span class="badge triple" style="margin:0;">Triple Bogey (+3)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LEADERBOARD TAB ===================== -->
+  <section id="tab-leaderboard" style="display:none;">
+    <div class="card">
+      <h2 class="section-title">Master Leaderboard</h2>
+      <p class="note">Ranked by score relative to par (lowest wins — that's golf for you). This pulls in any card saved on this device, plus any cards entered manually below from groups who texted theirs in.</p>
+      <div id="leaderboardList"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Add / Update a Group's Card</h2>
+      <p class="note">Got a text from a group with their final score? Enter it here to add them to the board.</p>
+      <label class="field-label">Group</label>
+      <select id="manualGroupSelect"></select>
+      <label class="field-label" style="margin-top:10px;">Total Strokes (18 holes)</label>
+      <input type="text" inputmode="numeric" id="manualStrokes" placeholder="e.g. 79">
+      <button class="btn gold" id="manualSaveBtn">Add to Leaderboard</button>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Honesty Check</h2>
+      <p class="note">Every score on this board is either entered live, hole-by-hole, with automatic par labeling — or self-reported by the group. If a number looks suspicious (looking at you, group that "shot 64")... that's between you and the 19th hole. ⛳</p>
+    </div>
+  </section>
+
+  <!-- ===================== TEE SHEET / ROSTER TAB ===================== -->
+  <section id="tab-roster" style="display:none;">
+    <div class="card">
+      <h2 class="section-title">Tee Sheet — 6 Groups, 9-Minute Intervals</h2>
+      <div id="rosterList"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Built for Tommy Gunz's 50th — keep score, keep everyone honest, have a great time. 🥃<br>
+  Works on any phone — iPhone, Android, Samsung — just open this page in your browser.
+</footer>
+
+<script>
+/* ---------- DATA ---------- */
+const GROUPS = [
+  { id: 1, time: "7:00", players: ["Mav","Roosevelt","Ron","Henry Rock"] },
+  { id: 2, time: "7:09", players: ["Joe Mason","Loretta Knight","Owen","Patrick"] },
+  { id: 3, time: "7:18", players: ["Kenny Anderson","Chris Anderson","Chicken Parm","John Farley"] },
+  { id: 4, time: "7:27", players: ["AP","Tommy Knight","Alfred Eusini","Mike Avella"] },
+  { id: 5, time: "7:36", players: ["Mike","Curt","Erik","Rob Lung"] },
+  { id: 6, time: "7:45", players: ["Brandon Mincher","Bryan Mincher","Chris Mason","Robin Mason"] },
+];
+
+// Douglaston Park Golf Course — Little Neck, NY. Real par-67 layout (18 holes).
+// Source: official GolfNYC / BlueGolf scorecard.
+const PARS = [4,3,4,4,3,4,5,4,3,  4,4,3,4,4,3,3,3,5]; // OUT 34 · IN 33 · TOT 67
+
+// Yardage per hole, by tee set
+const YARDS = {
+  back:    [385,163,369,431,125,420,470,380,202,  324,297,157,370,347,181,160,125,533], // 5439
+  middle:  [354,147,333,400,130,400,460,367,172,  304,273,145,355,325,157,137,112,500], // 5071
+  forward: [284,127,295,357,120,364,392,309,120,  281,220,115,308,310,152,125,100,434], // 4413
+};
+const TEES = [
+  { id:"back",    label:"Back",    yards:5439, rating:65.9, slope:114 },
+  { id:"middle",  label:"Middle",  yards:5071, rating:64.1, slope:112 },
+  { id:"forward", label:"Forward", yards:4413, rating:62.1, slope:106 },
+];
+
+const PAR_OUT = PARS.slice(0,9).reduce((a,b)=>a+b,0);   // 34
+const PAR_IN  = PARS.slice(9,18).reduce((a,b)=>a+b,0);  // 33
+const PAR_TOTAL = PAR_OUT + PAR_IN;                     // 67
+
+const STORAGE_KEY = "birdie50_scores_v1";
+const SOUND_KEY = "birdie50_sound_v1";
+const TEE_KEY = "birdie50_tee_v1";
+
+/* ---------- SOUND FX (synthesized — no external audio files, works offline) ---------- */
+function safeGet(key){
+  try { return localStorage.getItem(key); } catch(e){ return null; }
+}
+function safeSet(key, val){
+  try { localStorage.setItem(key, val); } catch(e){ /* ignore — private mode etc. */ }
+}
+let soundOn = safeGet(SOUND_KEY) !== "off";
+let audioCtx = null;
+function getCtx(){
+  if(!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(AC) audioCtx = new AC();
+  }
+  if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+/* Track whatever is currently sounding so a new score can cut it off cleanly. */
+let activeVoice = null;   // HTMLAudioElement currently playing (Birthday Boys clip)
+let liveOscs = [];        // synth oscillator nodes currently scheduled
+function stopCurrentSound(){
+  if(activeVoice){
+    try { activeVoice.pause(); activeVoice.currentTime = 0; } catch(e){}
+    activeVoice = null;
+  }
+  if(liveOscs.length){
+    const now = audioCtx ? audioCtx.currentTime : 0;
+    liveOscs.forEach(o=>{ try { o.stop(now); } catch(e){} try { o.disconnect(); } catch(e){} });
+    liveOscs = [];
+  }
+}
+
+/* Mobile browsers (iOS Safari, Android Chrome) start audio "locked" and only allow
+   playback that begins inside a real tap/click. unlockAudio() runs from a user gesture:
+   it resumes the Web Audio context and silently primes each voice clip so later score
+   sounds are allowed to play. Safe to call repeatedly — the priming only runs once. */
+let audioPrimed = false;
+function unlockAudio(){
+  const ctx = getCtx(); // creating/resuming inside the gesture is what unlocks Web Audio
+  if(ctx && ctx.state === "suspended") ctx.resume();
+  if(audioPrimed) return;
+  audioPrimed = true;
+  Object.keys(VOICE_BASENAMES).forEach(cls=>{
+    const clip = voiceCache[cls];
+    if(clip instanceof HTMLAudioElement){
+      try {
+        clip.muted = true;
+        const p = clip.play();
+        const reset = ()=>{ try { clip.pause(); clip.currentTime = 0; clip.muted = false; } catch(e){} };
+        if(p && p.then) p.then(reset).catch(()=>{ clip.muted = false; });
+        else reset();
+      } catch(e){ clip.muted = false; }
+    }
+  });
+}
+// First touch/click anywhere also unlocks audio, so the very first +/- tap makes sound.
+["pointerdown","touchend","click"].forEach(ev=>{
+  document.addEventListener(ev, unlockAudio, { once:true, passive:true });
+});
+
+function tone(ctx, freq, startTime, duration, type, peakGain){
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(peakGain || 0.16, startTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration + 0.03);
+  liveOscs.push(osc);
+}
+function sweep(ctx, fromFreq, toFreq, startTime, duration, type, peakGain){
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.setValueAtTime(fromFreq, startTime);
+  osc.frequency.exponentialRampToValueAtTime(toFreq, startTime + duration);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(peakGain || 0.16, startTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration + 0.03);
+  liveOscs.push(osc);
+}
+/* ---------- TOMMY'S OWN VOICE CLIPS (override the synth sounds when present) ----------
+   Drop short recordings into an "audio" folder right next to this HTML file in the repo,
+   named exactly like the basenames below (any of these extensions works: mp3, m4a, wav, ogg —
+   the app probes for whichever one exists). No code changes needed — just add the files,
+   commit, and push. If a clip is missing, that score quietly falls back to the synth sound.
+   Suggested lines for Tommy to record (1–3 seconds each, exaggerated delivery encouraged):
+     ace        → "HOLE IN ONE!!! Are you KIDDING me?!"
+     eagle      → "EAGLE!! Somebody call ESPN!"
+     birdie     → "Birdie, baby!"
+     par        → "That'll play. Par."
+     bogey      → "...bogey. We'll allow it."
+     dbogey     → "Double bogey. C'mon now."
+     triple     → "Triple bogey. Pick it up, let's go."
+     other      → "Oh no. Oh NO. Take the drop."
+*/
+const VOICE_BASENAMES = {
+  ace:    "audio/hole-in-one",
+  eagle:  "audio/eagle",
+  birdie: "audio/birdie",
+  par:    "audio/par",
+  bogey:  "audio/bogey",
+  dbogey: "audio/double-bogey",
+  triple: "audio/triple-bogey",
+  other:  "audio/triple-plus"
+};
+const VOICE_EXTENSIONS = ["mp3","m4a","wav","ogg"];
+const voiceCache = {}; // cls -> HTMLAudioElement (loaded) | false (confirmed missing) | undefined (checking)
+
+function primeVoiceClip(cls){
+  if(voiceCache[cls] !== undefined) return;
+  const base = VOICE_BASENAMES[cls];
+  if(!base){ voiceCache[cls] = false; return; }
+  let i = 0;
+  function tryNext(){
+    if(i >= VOICE_EXTENSIONS.length){ voiceCache[cls] = false; return; }
+    const url = `${base}.${VOICE_EXTENSIONS[i]}`;
+    const audio = new Audio();
+    audio.preload = "auto";
+    const onReady = ()=>{ voiceCache[cls] = audio; cleanup(); };
+    const onErr   = ()=>{ i++; cleanup(); tryNext(); };
+    function cleanup(){
+      audio.removeEventListener("canplaythrough", onReady);
+      audio.removeEventListener("error", onErr);
+    }
+    audio.addEventListener("canplaythrough", onReady, { once:true });
+    audio.addEventListener("error", onErr, { once:true });
+    audio.src = url;
+    audio.load();
+  }
+  tryNext();
+}
+// Kick off background checks for every clip type — by the time a score is entered,
+// whichever clips exist should already be primed and ready to play instantly.
+Object.keys(VOICE_BASENAMES).forEach(primeVoiceClip);
+
+function playVoiceClip(cls){
+  const clip = voiceCache[cls];
+  if(clip instanceof HTMLAudioElement){
+    try {
+      clip.currentTime = 0;
+      activeVoice = clip;
+      clip.onended = ()=>{ if(activeVoice === clip) activeVoice = null; };
+      const p = clip.play();
+      if(p && p.catch) p.catch(()=>{});
+      return true;
+    } catch(e){ /* fall through to synth */ }
+  }
+  return false;
+}
+
+function playSound(cls){
+  if(!soundOn) return;
+  stopCurrentSound(); // cut off the previous score's sound so nothing overlaps
+  if(playVoiceClip(cls)) return; // Tommy's own voice takes priority when the clip exists
+  const ctx = getCtx();
+  if(!ctx) return;
+  const t = ctx.currentTime + 0.01;
+  switch(cls){
+    case "ace":
+      // the rarest shot in golf — a full-on celebratory fanfare with a final flourish
+      tone(ctx, 523.25, t,       0.16, "triangle", 0.22); // C5
+      tone(ctx, 659.25, t+0.10,  0.16, "triangle", 0.22); // E5
+      tone(ctx, 783.99, t+0.20,  0.16, "triangle", 0.22); // G5
+      tone(ctx, 1046.5, t+0.30,  0.18, "triangle", 0.24); // C6
+      tone(ctx, 1318.5, t+0.42,  0.45, "triangle", 0.24); // E6
+      tone(ctx, 783.99, t+0.42,  0.45, "triangle", 0.16); // G5 harmony
+      sweep(ctx, 1600, 2800, t+0.46, 0.45, "sine", 0.09);
+      sweep(ctx, 2000, 3400, t+0.62, 0.40, "sine", 0.08);
+      break;
+    case "eagle":
+      // triumphant rising fanfare — this almost never happens, so it should feel like it
+      tone(ctx, 523.25, t,       0.18, "triangle", 0.20); // C5
+      tone(ctx, 659.25, t+0.12,  0.18, "triangle", 0.20); // E5
+      tone(ctx, 783.99, t+0.24,  0.22, "triangle", 0.22); // G5
+      tone(ctx, 1046.5, t+0.38,  0.40, "triangle", 0.22); // C6
+      sweep(ctx, 1400, 2200, t+0.40, 0.35, "sine", 0.07);
+      break;
+    case "birdie":
+      // bright bird chirp — two quick upward tweets, on the nose for "birdie"
+      sweep(ctx, 1800, 2600, t,      0.11, "sine", 0.15);
+      sweep(ctx, 2000, 3000, t+0.13, 0.14, "sine", 0.15);
+      break;
+    case "par":
+      // simple clean confirmation ding
+      tone(ctx, 880, t, 0.16, "sine", 0.13);
+      break;
+    case "bogey":
+      // descending two-note "womp womp"
+      tone(ctx, 311.13, t,      0.22, "sawtooth", 0.11); // Eb4
+      tone(ctx, 261.63, t+0.20, 0.32, "sawtooth", 0.11); // C4
+      break;
+    case "dbogey":
+      // lower, longer "womp womp womp" — bigger blunder, bigger sound
+      tone(ctx, 246.94, t,      0.22, "sawtooth", 0.12); // B3
+      tone(ctx, 220.00, t+0.20, 0.22, "sawtooth", 0.12); // A3
+      tone(ctx, 196.00, t+0.40, 0.42, "sawtooth", 0.13); // G3
+      break;
+    case "triple":
+      // four descending notes — one rung lower/longer than the double-bogey womp
+      tone(ctx, 220.00, t,      0.22, "sawtooth", 0.12); // A3
+      tone(ctx, 196.00, t+0.20, 0.22, "sawtooth", 0.12); // G3
+      tone(ctx, 174.61, t+0.40, 0.22, "sawtooth", 0.12); // F3
+      tone(ctx, 146.83, t+0.60, 0.48, "sawtooth", 0.13); // D3
+      break;
+    case "other":
+      // the sad trombone, for triple-bogey-or-worse honesty moments
+      sweep(ctx, 392, 196, t,        0.70, "sawtooth", 0.12);
+      sweep(ctx, 349, 174, t+0.55,   0.60, "sawtooth", 0.11);
+      break;
+  }
+}
+
+/* ---------- STATE ---------- */
+let store = loadStore();
+let currentGroupId = GROUPS[0].id;
+let currentTee = (function(){
+  const saved = safeGet(TEE_KEY);
+  return TEES.some(t=>t.id===saved) ? saved : "middle";
+})();
+
+// Safari private-browsing mode (and some file:// contexts) can throw on localStorage
+// access entirely — safeGet/safeSet (defined above, near soundOn) swallow that and
+// degrade gracefully to in-memory-only for the session.
+function loadStore(){
+  try {
+    return JSON.parse(safeGet(STORAGE_KEY)) || {};
+  } catch(e){ return {}; }
+}
+function saveStore(){
+  safeSet(STORAGE_KEY, JSON.stringify(store));
+}
+function getGroupScores(id){
+  if(!store[id]) store[id] = { scores: Array(18).fill(null), manualTotal: null };
+  if(!store[id].scores) store[id].scores = Array(18).fill(null);
+  return store[id];
+}
+
+/* ---------- SCORING LABELS ---------- */
+function labelFor(score, par){
+  if(score == null) return { text: "—", cls: "empty" };
+  if(score === 1) return { text: "Hole in One!", cls: "ace" };
+  const diff = score - par;
+  if(diff <= -2) return { text: "Eagle", cls: "eagle" };
+  if(diff === -1) return { text: "Birdie", cls: "birdie" };
+  if(diff === 0)  return { text: "Par", cls: "par" };
+  if(diff === 1)  return { text: "Bogey", cls: "bogey" };
+  if(diff === 2)  return { text: "Dbl Bogey", cls: "dbogey" };
+  if(diff === 3)  return { text: "Triple Bogey", cls: "triple" };
+  return { text: `+${diff} Ouch`, cls: "other" };
+}
+function relText(rel){
+  if(rel === 0) return "E";
+  return rel > 0 ? `+${rel}` : `${rel}`;
+}
+
+/* ---------- TABS ---------- */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll("main > section").forEach(s=>s.style.display="none");
+    document.getElementById("tab-"+btn.dataset.tab).style.display="block";
+    if(btn.dataset.tab === "leaderboard") renderLeaderboard();
+  });
+});
+
+/* ---------- GROUP SELECTOR ---------- */
+const groupSelect = document.getElementById("groupSelect");
+const manualGroupSelect = document.getElementById("manualGroupSelect");
+GROUPS.forEach(g=>{
+  const label = `Group ${g.id} — ${g.time} (${g.players.join(", ")})`;
+  const opt1 = document.createElement("option");
+  opt1.value = g.id; opt1.textContent = `Group ${g.id} — ${g.time}`;
+  groupSelect.appendChild(opt1);
+  const opt2 = document.createElement("option");
+  opt2.value = g.id; opt2.textContent = `Group ${g.id} — ${g.time}`;
+  manualGroupSelect.appendChild(opt2);
+});
+groupSelect.addEventListener("change", ()=>{
+  currentGroupId = parseInt(groupSelect.value, 10);
+  renderGroupMeta();
+  renderHoles();
+  renderTotals();
+});
+
+function renderGroupMeta(){
+  const g = GROUPS.find(g=>g.id===currentGroupId);
+  document.getElementById("groupTime").textContent = g.time + " AM";
+  document.getElementById("groupPlayers").textContent = g.players.join(" • ");
+}
+
+/* ---------- TEE SELECTOR ---------- */
+const teeSelect = document.getElementById("teeSelect");
+TEES.forEach(t=>{
+  const opt = document.createElement("option");
+  opt.value = t.id;
+  opt.textContent = `${t.label} — ${t.yards.toLocaleString()} yds`;
+  teeSelect.appendChild(opt);
+});
+teeSelect.value = currentTee;
+function renderTeeMeta(){
+  const t = TEES.find(t=>t.id===currentTee);
+  document.getElementById("teeMeta").textContent = `${t.label} · ${t.yards.toLocaleString()} yds · ${t.rating}/${t.slope}`;
+}
+teeSelect.addEventListener("change", ()=>{
+  currentTee = teeSelect.value;
+  safeSet(TEE_KEY, currentTee);
+  renderTeeMeta();
+  renderHoles();
+  renderTotals();
+});
+
+/* ---------- HOLE ROWS ---------- */
+function buildHoleRow(holeNum){
+  const par = PARS[holeNum-1];
+  const row = document.createElement("div");
+  row.className = "hole-row";
+  row.innerHTML = `
+    <div class="hole-id">
+      <div class="num">Hole ${holeNum}</div>
+      <div class="par">Par ${par}</div>
+      <div class="yds"><span class="ydsVal">${YARDS[currentTee][holeNum-1]}</span> <span class="unit">yds</span></div>
+    </div>
+    <div class="stepper">
+      <button class="dec" aria-label="decrease">−</button>
+      <div class="score-val">–</div>
+      <button class="inc" aria-label="increase">+</button>
+    </div>
+    <div class="badge empty">—</div>
+  `;
+  const valEl = row.querySelector(".score-val");
+  const badgeEl = row.querySelector(".badge");
+  const dec = row.querySelector(".dec");
+  const inc = row.querySelector(".inc");
+
+  function refresh(){
+    const data = getGroupScores(currentGroupId);
+    const sc = data.scores[holeNum-1];
+    valEl.textContent = sc == null ? "–" : sc;
+    const lab = labelFor(sc, par);
+    badgeEl.textContent = lab.text;
+    badgeEl.className = "badge " + lab.cls;
+  }
+  dec.addEventListener("click", ()=>{
+    const data = getGroupScores(currentGroupId);
+    let sc = data.scores[holeNum-1];
+    sc = sc == null ? par : Math.max(1, sc - 1);
+    data.scores[holeNum-1] = sc;
+    saveStore();
+    refresh();
+    renderTotals();
+    playSound(labelFor(sc, par).cls);
+  });
+  inc.addEventListener("click", ()=>{
+    const data = getGroupScores(currentGroupId);
+    let sc = data.scores[holeNum-1];
+    sc = sc == null ? par : Math.min(par + 3, sc + 1);
+    data.scores[holeNum-1] = sc;
+    saveStore();
+    refresh();
+    renderTotals();
+    playSound(labelFor(sc, par).cls);
+  });
+  refresh();
+  return row;
+}
+
+function renderHoles(){
+  const front = document.getElementById("frontNine");
+  const back = document.getElementById("backNine");
+  front.innerHTML = "";
+  back.innerHTML = "";
+  for(let h=1; h<=9; h++) front.appendChild(buildHoleRow(h));
+  for(let h=10; h<=18; h++) back.appendChild(buildHoleRow(h));
+}
+
+/* ---------- TOTALS ---------- */
+function renderTotals(){
+  const data = getGroupScores(currentGroupId);
+  const scores = data.scores;
+
+  function sumRange(start, end){ // inclusive 0-based indices
+    let strokes = 0, par = 0, count = 0;
+    for(let i=start;i<=end;i++){
+      if(scores[i] != null){ strokes += scores[i]; par += PARS[i]; count++; }
+    }
+    return { strokes, par, count };
+  }
+  const front = sumRange(0,8);
+  const back = sumRange(9,17);
+  const total = sumRange(0,17);
+
+  const yd = YARDS[currentTee];
+  const frontYd = yd.slice(0,9).reduce((a,b)=>a+b,0);
+  const backYd  = yd.slice(9,18).reduce((a,b)=>a+b,0);
+
+  document.getElementById("frontStrokes").textContent = front.count ? front.strokes : "–";
+  document.getElementById("frontRel").textContent = front.count ? relText(front.strokes - front.par) : "–";
+  document.getElementById("frontYards").textContent = frontYd.toLocaleString();
+  document.getElementById("frontParLbl").textContent = `Vs. Par (${PAR_OUT})`;
+  document.getElementById("backStrokes").textContent = back.count ? back.strokes : "–";
+  document.getElementById("backRel").textContent = back.count ? relText(back.strokes - back.par) : "–";
+  document.getElementById("backYards").textContent = backYd.toLocaleString();
+  document.getElementById("backParLbl").textContent = `Vs. Par (${PAR_IN})`;
+  document.getElementById("totalStrokes").textContent = total.count ? total.strokes : "–";
+  document.getElementById("totalRel").textContent = total.count ? relText(total.strokes - total.par) : "–";
+  document.getElementById("totalParLbl").textContent = `Vs. Par (${PAR_TOTAL})`;
+  document.getElementById("totalHoles").textContent = `${total.count}/18`;
+}
+
+/* ---------- SAVE / SHARE ---------- */
+document.getElementById("saveBtn").addEventListener("click", ()=>{
+  saveStore();
+  flashButton(document.getElementById("saveBtn"), "Saved ✓");
+});
+function flashButton(btn, msg){
+  const old = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(()=>{ btn.textContent = old; }, 1400);
+}
+
+document.getElementById("shareBtn").addEventListener("click", ()=>{
+  const g = GROUPS.find(g=>g.id===currentGroupId);
+  const data = getGroupScores(currentGroupId);
+  const scores = data.scores;
+  let strokes = 0, par = 0, count = 0;
+  let lines = [];
+  for(let i=0;i<18;i++){
+    if(scores[i] != null){
+      strokes += scores[i]; par += PARS[i]; count++;
+      lines.push(`H${i+1}: ${scores[i]} (${labelFor(scores[i],PARS[i]).text})`);
+    }
+  }
+  const rel = count ? relText(strokes-par) : "—";
+  const teeInfo = TEES.find(t=>t.id===currentTee);
+  const summary =
+`🏌️ Tommy's 50th — Group ${g.id} (${g.time} AM)
+Players: ${g.players.join(", ")}
+Course: Douglaston Park · ${teeInfo.label} tees (${teeInfo.yards.toLocaleString()} yds, Par ${PAR_TOTAL})
+Holes recorded: ${count}/18
+Total strokes: ${count ? strokes : "—"}  |  Vs. par: ${rel}
+
+${lines.join("\n")}`;
+
+  if(navigator.share){
+    navigator.share({ title: `Group ${g.id} Scorecard`, text: summary }).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(summary).then(()=>{
+      flashButton(document.getElementById("shareBtn"), "Copied — paste into a text ✓");
+    }).catch(()=>{
+      window.prompt("Copy this card and send it to the organizer:", summary);
+    });
+  } else {
+    window.prompt("Copy this card and send it to the organizer:", summary);
+  }
+});
+
+/* ---------- LEADERBOARD ---------- */
+document.getElementById("manualSaveBtn").addEventListener("click", ()=>{
+  const id = parseInt(manualGroupSelect.value, 10);
+  const val = parseInt(document.getElementById("manualStrokes").value, 10);
+  if(isNaN(val) || val < 18 || val > 200){
+    window.alert("Enter a believable 18-hole total (e.g. 79).");
+    return;
+  }
+  const data = getGroupScores(id);
+  data.manualTotal = val;
+  saveStore();
+  document.getElementById("manualStrokes").value = "";
+  flashButton(document.getElementById("manualSaveBtn"), "Added ✓");
+  renderLeaderboard();
+});
+
+function groupTotalFromScores(id){
+  const data = getGroupScores(id);
+  const scores = data.scores;
+  let strokes = 0, par = 0, count = 0;
+  for(let i=0;i<18;i++){
+    if(scores[i] != null){ strokes += scores[i]; par += PARS[i]; count++; }
+  }
+  return { strokes, par, count };
+}
+
+function renderLeaderboard(){
+  const list = document.getElementById("leaderboardList");
+  list.innerHTML = "";
+
+  const rows = GROUPS.map(g=>{
+    const live = groupTotalFromScores(g.id);
+    const data = getGroupScores(g.id);
+    let strokes = null, rel = null, source = null;
+
+    if(live.count === 18){
+      strokes = live.strokes;
+      rel = live.strokes - live.par;
+      source = "live (18/18)";
+    } else if(data.manualTotal != null){
+      strokes = data.manualTotal;
+      rel = data.manualTotal - PAR_TOTAL;
+      source = "self-reported";
+    } else if(live.count > 0){
+      strokes = live.strokes;
+      rel = live.strokes - live.par;
+      source = `in progress (${live.count}/18)`;
+    }
+    return { g, strokes, rel, source };
+  });
+
+  const ranked = rows.filter(r=>r.strokes != null).sort((a,b)=> a.rel - b.rel);
+  const unranked = rows.filter(r=>r.strokes == null);
+
+  if(ranked.length === 0){
+    list.innerHTML = `<p class="note">No scores yet. Once a group enters their card (or you add one manually), they'll show up here.</p>`;
+  }
+
+  ranked.forEach((r, idx)=>{
+    const row = document.createElement("div");
+    row.className = "lb-row" + (idx===0 ? " gold-rank" : "");
+    row.innerHTML = `
+      <div class="lb-rank">${idx===0 ? "🏆" : idx+1}</div>
+      <div class="lb-info">
+        <div class="gname">Group ${r.g.id} — ${r.g.time} AM</div>
+        <div class="gplayers">${r.g.players.join(", ")} · ${r.source}</div>
+      </div>
+      <div class="lb-score">
+        <div class="rel">${relText(r.rel)}</div>
+        <div class="strokes">${r.strokes} strokes</div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  unranked.forEach(r=>{
+    const row = document.createElement("div");
+    row.className = "lb-row";
+    row.innerHTML = `
+      <div class="lb-rank">–</div>
+      <div class="lb-info">
+        <div class="gname">Group ${r.g.id} — ${r.g.time} AM</div>
+        <div class="gplayers">${r.g.players.join(", ")} · no card yet</div>
+      </div>
+      <div class="lb-score"><div class="strokes">—</div></div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+/* ---------- ROSTER ---------- */
+function renderRoster(){
+  const list = document.getElementById("rosterList");
+  list.innerHTML = "";
+  GROUPS.forEach(g=>{
+    const div = document.createElement("div");
+    div.className = "roster-group";
+    div.innerHTML = `
+      <span class="gname">Group ${g.id}</span> — <span class="gtime">${g.time} AM tee time</span>
+      <ul>${g.players.map(p=>`<li>${p}</li>`).join("")}</ul>
+    `;
+    list.appendChild(div);
+  });
+}
+
+/* ---------- SOUND TOGGLE ---------- */
+const soundToggleBtn = document.getElementById("soundToggle");
+function updateSoundToggleUI(){
+  soundToggleBtn.textContent = soundOn ? "🔊 Sound: On" : "🔇 Sound: Off";
+  soundToggleBtn.classList.toggle("off", !soundOn);
+}
+soundToggleBtn.addEventListener("click", ()=>{
+  soundOn = !soundOn;
+  safeSet(SOUND_KEY, soundOn ? "on" : "off");
+  updateSoundToggleUI();
+  if(soundOn){
+    unlockAudio();      // resume + prime audio within this tap (required on iOS/Android)
+    playSound("par");   // quick sample so they know it's live
+  } else {
+    stopCurrentSound(); // turning off silences anything mid-clip right away
+  }
+});
+updateSoundToggleUI();
+
+/* ---------- INIT ---------- */
+renderGroupMeta();
+renderTeeMeta();
+renderHoles();
+renderTotals();
+renderRoster();
+</script>
+</body>
+</html>
