@@ -569,8 +569,7 @@ const VOICE_BASENAMES = {
   triple: "audio/triple-bogey",
 other:  "audio/triple-bogey",
 };
-const VOICE_EXTENSIONS = ["mp3","m4
-const voiceCache = {}; // cls -> HTMLAudioElement (loaded) | false (confirmed missing) | undefined (checking)
+const VOICE_EXTENSIONS = ["mp3","m4a"];const voiceCache = {}; // cls -> HTMLAudioElement (loaded) | false (confirmed missing) | undefined (checking)
 
 function primeVoiceClip(cls){
   if(voiceCache[cls] !== undefined) return;
