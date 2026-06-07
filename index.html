@@ -809,7 +809,7 @@ function buildHoleRow(holeNum){
   dec.addEventListener("click", ()=>{
     const data = getGroupScores(currentGroupId);
     let sc = data.scores[holeNum-1];
-    sc = sc == null ? par : Math.max(1, sc - 1);
+      sc = sc == null ? null : (sc <= 1 ? null : sc - 1);
     data.scores[holeNum-1] = sc;
     saveStore();
     refresh();
