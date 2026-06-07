@@ -83,13 +83,14 @@
   }
   nav button{
     flex:1;
-    padding:12px 6px;
+    padding:12px 3px;
     background:transparent;
     border:none;
     color:rgba(255,255,255,.65);
-    font-size:.85rem;
+    font-size:.74rem;
     font-weight:600;
     border-bottom:3px solid transparent;
+    white-space:nowrap;
   }
   nav button.active{
     color:white;
@@ -292,6 +293,171 @@
   .roster-group .gname{font-weight:700;}
   .roster-group .gtime{color:var(--grey);font-size:.8rem;}
   .roster-group ul{margin:6px 0 0;padding-left:18px;font-size:.85rem;}
+  /* ---- One-time festive splash ---- */
+  .splash{
+    position:fixed;
+    inset:0;
+    z-index:200;
+    background:linear-gradient(150deg,var(--green),var(--green-dark) 70%,#0e3520);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    animation:splashIn .4s ease;
+  }
+  @keyframes splashIn{from{opacity:0;}to{opacity:1;}}
+  .splash.out{animation:splashOut .5s ease forwards;}
+  @keyframes splashOut{to{opacity:0;transform:scale(1.04);visibility:hidden;}}
+  .splash-inner{
+    position:relative;
+    z-index:2;
+    text-align:center;
+    color:white;
+    padding:24px;
+    max-width:420px;
+  }
+  .splash-tag{
+    font-size:.95rem;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    opacity:.9;
+    font-weight:700;
+  }
+  .splash-big50{
+    font-size:8rem;
+    line-height:.9;
+    font-weight:900;
+    color:var(--gold);
+    text-shadow:0 4px 18px rgba(0,0,0,.4);
+    margin:6px 0;
+    animation:pop .6s cubic-bezier(.2,1.4,.4,1) both;
+    animation-delay:.15s;
+  }
+  @keyframes pop{from{transform:scale(.2);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .splash-title{
+    margin:0;
+    font-size:1.5rem;
+    letter-spacing:.5px;
+  }
+  .splash-sub{
+    margin:6px 0 26px;
+    font-size:.92rem;
+    opacity:.9;
+  }
+  .splash-btn{
+    display:inline-block;
+    padding:15px 34px;
+    border-radius:32px;
+    border:none;
+    background:var(--gold);
+    color:var(--ink);
+    font-size:1.1rem;
+    font-weight:900;
+    cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.3);
+    touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;
+  }
+  .splash-btn:active{transform:scale(.96);}
+  .splash-link{
+    display:block;
+    margin:16px auto 0;
+    background:none;
+    border:none;
+    color:rgba(255,255,255,.85);
+    font-size:.85rem;
+    font-weight:600;
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .splash-link.playing{color:var(--gold);}
+  .confetti{position:absolute;inset:0;z-index:1;pointer-events:none;}
+  .confetti i{
+    position:absolute;
+    top:-12px;
+    width:9px;height:14px;
+    opacity:.9;
+    animation:fall linear forwards;
+  }
+  @keyframes fall{
+    to{transform:translateY(108vh) rotate(720deg);opacity:.6;}
+  }
+  /* ---- Welcome tab ---- */
+  .welcome-hero{
+    text-align:center;
+    background:linear-gradient(135deg,var(--green),var(--green-dark));
+    color:white;
+    border:none;
+  }
+  .welcome-hero .big50{
+    font-size:3.2rem;
+    font-weight:900;
+    line-height:1;
+    color:var(--gold);
+    text-shadow:0 2px 6px rgba(0,0,0,.3);
+    margin:4px 0 2px;
+  }
+  .welcome-hero h2{
+    margin:0 0 2px;
+    font-size:1.15rem;
+    letter-spacing:.5px;
+  }
+  .welcome-hero .sub{
+    font-size:.85rem;
+    opacity:.9;
+    margin:0 0 14px;
+  }
+  .welcome-play{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:13px 22px;
+    border-radius:30px;
+    border:2px solid var(--gold);
+    background:var(--gold);
+    color:var(--ink);
+    font-size:1rem;
+    font-weight:800;
+    cursor:pointer;
+    touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;
+  }
+  .welcome-play:active{transform:scale(.97);}
+  .welcome-play.playing{background:transparent;color:white;}
+  .welcome-details p{margin:0 0 8px;font-size:.9rem;line-height:1.5;}
+  .welcome-details p:last-child{margin-bottom:0;}
+  .fact-row{
+    display:flex;justify-content:space-around;text-align:center;
+    margin:6px 0 2px;gap:8px;
+  }
+  .fact-row .fact .v{font-size:1.35rem;font-weight:800;color:var(--green-dark);}
+  .fact-row .fact .k{font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--grey);}
+  /* ---- Soundboard tab ---- */
+  .sb-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+  }
+  .sb-btn{
+    border:none;
+    border-radius:14px;
+    padding:18px 10px;
+    color:white;
+    font-weight:800;
+    font-size:.92rem;
+    line-height:1.15;
+    text-align:center;
+    cursor:pointer;
+    touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;
+    box-shadow:0 2px 5px rgba(0,0,0,.15);
+    min-height:96px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    transition:transform .08s ease;
+  }
+  .sb-btn:active{transform:scale(.95);}
+  .sb-btn.playing{box-shadow:0 0 0 3px var(--gold) inset, 0 2px 5px rgba(0,0,0,.15);}
+  .sb-btn .emoji{font-size:1.9rem;line-height:1;}
   footer{
     text-align:center;
     font-size:.72rem;
@@ -302,6 +468,19 @@
 </head>
 <body>
 
+<!-- ===================== ONE-TIME FESTIVE SPLASH ===================== -->
+<div id="splash" class="splash" style="display:none;">
+  <div id="confetti" class="confetti"></div>
+  <div class="splash-inner">
+    <div class="splash-tag">⛳ Welcome to</div>
+    <div class="splash-big50">50</div>
+    <h1 class="splash-title">Should of Been a Birdie</h1>
+    <p class="splash-sub">Tommy Gunz's 50th Birthday Golf Outing</p>
+    <button id="splashEnter" type="button" class="splash-btn">Let's Play 🏌️</button>
+    <button id="splashWelcome" type="button" class="splash-link">▶︎ Play Tommy's Welcome first</button>
+  </div>
+</div>
+
 <div class="topbar">
   <header>
     <h1>🏌️ Should of Been a Birdie</h1>
@@ -310,13 +489,42 @@
   </header>
 
   <nav>
-    <button class="tab-btn active" data-tab="roster">Tee Sheet</button>
-    <button class="tab-btn" data-tab="score">Enter Score</button>
-    <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+    <button class="tab-btn active" data-tab="welcome">Welcome</button>
+    <button class="tab-btn" data-tab="roster">Tee Sheet</button>
+    <button class="tab-btn" data-tab="score">Score</button>
+    <button class="tab-btn" data-tab="leaderboard">Leaders</button>
+    <button class="tab-btn" data-tab="soundboard">Sounds</button>
   </nav>
 </div>
 
 <main>
+
+  <!-- ===================== WELCOME TAB ===================== -->
+  <section id="tab-welcome">
+    <div class="card welcome-hero">
+      <h2>🏌️ Should of Been a Birdie</h2>
+      <div class="big50">50</div>
+      <p class="sub">Tommy Gunz's 50th Birthday Golf Outing</p>
+      <button id="welcomePlayBtn" type="button" class="welcome-play">▶︎ Play Tommy's Welcome</button>
+    </div>
+
+    <div class="card welcome-details">
+      <h2 class="section-title">Here's the Deal</h2>
+      <p>Welcome to the big one, fellas. Half a century of Tommy Gunz — and we're celebrating the only way that makes sense: 18 holes, a full leaderboard, and zero mercy.</p>
+      <p>Use the tabs up top to find your <strong>tee time</strong>, punch in your group's <strong>best-ball score</strong> each hole, and watch the <strong>leaderboard</strong> sort itself out. Tap <strong>Sounds</strong> any time you need to talk some trash. 🔊</p>
+      <div class="fact-row">
+        <div class="fact"><div class="v">6</div><div class="k">Groups</div></div>
+        <div class="fact"><div class="v">24</div><div class="k">Golfers</div></div>
+        <div class="fact"><div class="v">7:00</div><div class="k">First Tee</div></div>
+        <div class="fact"><div class="v">Par 67</div><div class="k">Douglaston</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">House Rules</h2>
+      <p class="note">Best-ball per foursome. Keep it honest — the leaderboard sees all. Breakfast balls allowed on hole 1 only (we hear there's a sound for that). Have a great time, and remember: it <em>should</em> of been a birdie. ⛳</p>
+    </div>
+  </section>
 
   <!-- ===================== SCORE ENTRY TAB ===================== -->
   <section id="tab-score" style="display:none;">
@@ -407,10 +615,19 @@
   </section>
 
   <!-- ===================== TEE SHEET / ROSTER TAB ===================== -->
-  <section id="tab-roster">
+  <section id="tab-roster" style="display:none;">
     <div class="card">
       <h2 class="section-title">Tee Sheet — 6 Groups, 9-Minute Intervals</h2>
       <div id="rosterList"></div>
+    </div>
+  </section>
+
+  <!-- ===================== SOUNDBOARD TAB ===================== -->
+  <section id="tab-soundboard" style="display:none;">
+    <div class="card">
+      <h2 class="section-title">Soundboard</h2>
+      <p class="note">Tap a button to fire off one of Tommy's calls — perfect for celebrating a bomb or heckling a buddy in the bunker. Respects the 🔊 sound toggle up top.</p>
+      <div class="sb-grid" id="sbGrid"></div>
     </div>
   </section>
 
@@ -1044,12 +1261,166 @@ soundToggleBtn.addEventListener("click", ()=>{
 });
 updateSoundToggleUI();
 
+/* ---------- GENERIC CLIP PLAYER (welcome note + soundboard) ----------
+   Reuses the same audio plumbing as the score sounds: respects the global
+   soundOn toggle, unlocks audio inside the tap, and routes through
+   stopCurrentSound() so a new tap cleanly cuts off whatever was playing. */
+const clipCache = {}; // url -> HTMLAudioElement
+function playClipFile(url, onStart, onStop){
+  if(!soundOn) return false;
+  unlockAudio();          // resume/prime audio within this user gesture (iOS/Android)
+  stopCurrentSound();     // cut off any score sound or other clip mid-play
+  let a = clipCache[url];
+  if(!a){
+    a = new Audio(url);
+    a.preload = "auto";
+    clipCache[url] = a;
+  }
+  try { a.currentTime = 0; } catch(e){}
+  activeVoice = a;        // so the NEXT stopCurrentSound() halts this clip
+  const clearUI = ()=>{ if(typeof onStop === "function") onStop(); };
+  a.onended = ()=>{ if(activeVoice === a) activeVoice = null; clearUI(); };
+  a.onpause = ()=>{ clearUI(); };
+  const p = a.play();
+  if(p && p.catch) p.catch(()=>{ clearUI(); });
+  if(typeof onStart === "function") onStart();
+  return true;
+}
+
+/* ---------- WELCOME NOTE BUTTON ---------- */
+const welcomeBtn = document.getElementById("welcomePlayBtn");
+const WELCOME_URL = "audio/welcome.mp3";
+if(welcomeBtn){
+  const idleLabel = "▶︎ Play Tommy's Welcome";
+  const playLabel = "⏸ Stop Welcome";
+  welcomeBtn.addEventListener("click", ()=>{
+    // If this clip is the one currently playing, tapping again stops it.
+    if(activeVoice && activeVoice === clipCache[WELCOME_URL] && !activeVoice.paused){
+      stopCurrentSound();
+      welcomeBtn.classList.remove("playing");
+      welcomeBtn.textContent = idleLabel;
+      return;
+    }
+    if(!soundOn){
+      welcomeBtn.textContent = "🔇 Turn sound on up top first";
+      setTimeout(()=>{ welcomeBtn.textContent = idleLabel; }, 1600);
+      return;
+    }
+    playClipFile(WELCOME_URL,
+      ()=>{ welcomeBtn.classList.add("playing"); welcomeBtn.textContent = playLabel; },
+      ()=>{ welcomeBtn.classList.remove("playing"); welcomeBtn.textContent = idleLabel; }
+    );
+  });
+}
+
+/* ---------- SOUNDBOARD ---------- */
+const SOUNDBOARD = [
+  { file:"should-been-birdie", label:"Should've Been a Birdie", emoji:"🐦", color:"var(--birdie)" },
+  { file:"thats-a-bomb",       label:"That's a Bomb",           emoji:"💣", color:"var(--triple)" },
+  { file:"shootn-darts",       label:"Shootin' Darts",          emoji:"🎯", color:"var(--bogey)" },
+  { file:"what-a-shot",        label:"What a Shot!",             emoji:"⛳", color:"var(--green)" },
+  { file:"dance-spida",        label:"Dance Spida",             emoji:"🕺", color:"var(--ace)" },
+  { file:"watch-trees",        label:"Watch the Trees!",        emoji:"🌲", color:"var(--green-dark)" },
+  { file:"bunker-shot",        label:"Bunker Shot",             emoji:"🏖️", color:"var(--dbogey)" },
+  { file:"breakfast-ball",     label:"Breakfast Ball",          emoji:"🍳", color:"var(--eagle)" },
+];
+function renderSoundboard(){
+  const grid = document.getElementById("sbGrid");
+  if(!grid) return;
+  grid.innerHTML = "";
+  SOUNDBOARD.forEach(clip=>{
+    const url = `audio/${clip.file}.mp3`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "sb-btn";
+    btn.style.background = clip.color;
+    btn.innerHTML = `<span class="emoji">${clip.emoji}</span><span>${clip.label}</span>`;
+    btn.addEventListener("click", ()=>{
+      // tapping the playing button again stops it
+      if(activeVoice && activeVoice === clipCache[url] && !activeVoice.paused){
+        stopCurrentSound();
+        btn.classList.remove("playing");
+        return;
+      }
+      const played = playClipFile(url,
+        ()=>{
+          document.querySelectorAll(".sb-btn.playing").forEach(b=>b.classList.remove("playing"));
+          btn.classList.add("playing");
+        },
+        ()=>{ btn.classList.remove("playing"); }
+      );
+      if(!played){
+        // sound is off — give quick visual feedback
+        const orig = btn.style.background;
+        btn.style.background = "var(--grey)";
+        setTimeout(()=>{ btn.style.background = orig; }, 400);
+      }
+    });
+    grid.appendChild(btn);
+  });
+}
+
+/* ---------- ONE-TIME FESTIVE SPLASH ---------- */
+const SPLASH_KEY = "birdie50_splash_v1";
+function spawnConfetti(){
+  const wrap = document.getElementById("confetti");
+  if(!wrap) return;
+  const colors = ["#e8b923","#ffffff","#1f6f43","#caa400","#c0392b","#b8009a"];
+  const N = 70;
+  let html = "";
+  for(let i=0;i<N;i++){
+    const left = Math.random()*100;
+    const delay = Math.random()*2.2;
+    const dur = 2.6 + Math.random()*2.4;
+    const color = colors[i % colors.length];
+    const w = 6 + Math.random()*6;
+    const h = 10 + Math.random()*8;
+    const radius = Math.random() < 0.4 ? "50%" : "2px";
+    html += `<i style="left:${left}%;background:${color};width:${w}px;height:${h}px;border-radius:${radius};animation-duration:${dur}s;animation-delay:${delay}s;"></i>`;
+  }
+  wrap.innerHTML = html;
+}
+function dismissSplash(){
+  const s = document.getElementById("splash");
+  if(!s) return;
+  safeSet(SPLASH_KEY, "seen");
+  s.classList.add("out");
+  setTimeout(()=>{ s.style.display = "none"; }, 520);
+}
+function initSplash(){
+  const s = document.getElementById("splash");
+  if(!s) return;
+  if(safeGet(SPLASH_KEY) === "seen"){ s.style.display = "none"; return; }
+  s.style.display = "flex";
+  spawnConfetti();
+  document.getElementById("splashEnter").addEventListener("click", dismissSplash);
+  const wlink = document.getElementById("splashWelcome");
+  wlink.addEventListener("click", ()=>{
+    if(activeVoice && activeVoice === clipCache[WELCOME_URL] && !activeVoice.paused){
+      stopCurrentSound();
+      wlink.classList.remove("playing");
+      wlink.textContent = "▶︎ Play Tommy's Welcome first";
+      return;
+    }
+    const ok = playClipFile(WELCOME_URL,
+      ()=>{ wlink.classList.add("playing"); wlink.textContent = "⏸ Stop welcome"; },
+      ()=>{ wlink.classList.remove("playing"); wlink.textContent = "▶︎ Play Tommy's Welcome first"; }
+    );
+    if(!ok){ // sound was toggled off
+      wlink.textContent = "🔇 turn sound on to hear it";
+      setTimeout(()=>{ wlink.textContent = "▶︎ Play Tommy's Welcome first"; }, 1600);
+    }
+  });
+}
+
 /* ---------- INIT ---------- */
+initSplash();
 renderGroupMeta();
 renderTeeMeta();
 renderHoles();
 renderTotals();
 renderRoster();
+renderSoundboard();
 </script>
 </body>
 </html>
