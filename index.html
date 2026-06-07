@@ -9,6 +9,10 @@
 <meta name="theme-color" content="#1f6f43">
 <meta name="format-detection" content="telephone=no">
 <title>Tommy's 50th — Golf Scorekeeper</title>
+<!-- Firebase compat SDK (powers the live shared leaderboard). If these fail to
+     load, or no config is set below, the app runs in on-device local mode. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <style>
   :root{
     --green:#1f6f43;
@@ -293,6 +297,44 @@
   .roster-group .gname{font-weight:700;}
   .roster-group .gtime{color:var(--grey);font-size:.8rem;}
   .roster-group ul{margin:6px 0 0;padding-left:18px;font-size:.85rem;}
+  /* ---- Live-sync badge ---- */
+  .sync-badge{
+    display:inline-block;
+    margin-top:8px;
+    padding:3px 12px;
+    border-radius:20px;
+    font-size:.68rem;
+    font-weight:800;
+    letter-spacing:.04em;
+    color:white;
+    background:#8a8a8a;
+  }
+  /* ---- Scorekeeper mode card ---- */
+  .sk-card{border:1px solid var(--gold);}
+  .sk-row{display:flex;align-items:center;gap:12px;}
+  .sk-title{font-weight:800;color:var(--green-dark);font-size:1rem;}
+  .sk-sub{font-size:.78rem;color:var(--grey);line-height:1.4;margin-top:3px;}
+  .sk-switch{
+    flex-shrink:0;
+    min-width:74px;
+    padding:10px 14px;
+    border-radius:22px;
+    border:2px solid var(--line);
+    background:var(--cream);
+    color:var(--grey);
+    font-weight:800;
+    font-size:.85rem;
+    cursor:pointer;
+    touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;
+  }
+  .sk-switch.on{
+    background:var(--green);
+    border-color:var(--green);
+    color:white;
+  }
+  /* read-only steppers (non-scorekeepers) */
+  .stepper.locked button{opacity:.3;pointer-events:none;}
   /* ---- One-time festive splash ---- */
   .splash{
     position:fixed;
@@ -486,6 +528,7 @@
     <h1>🏌️ Should of Been a Birdie</h1>
     <p>Tommy Gunz's 50th Birthday Golf Outing — Scorekeeper</p>
     <button id="soundToggle" type="button" class="sound-toggle">🔊 Sound: On</button>
+    <div><span id="syncBadge" class="sync-badge">On this phone</span></div>
   </header>
 
   <nav>
@@ -528,6 +571,16 @@
 
   <!-- ===================== SCORE ENTRY TAB ===================== -->
   <section id="tab-score" style="display:none;">
+    <div class="card sk-card" id="skCard" style="display:none;">
+      <div class="sk-row">
+        <div style="flex:1;">
+          <div class="sk-title">⛳ Scorekeeper Mode</div>
+          <div class="sk-sub" id="skSub">View only — your group's designated scorekeeper enters the scores. Watch them roll in live.</div>
+        </div>
+        <button id="skToggle" type="button" class="sk-switch">Off</button>
+      </div>
+    </div>
+
     <div class="card">
       <label class="field-label">Your Group</label>
       <select id="groupSelect"></select>
@@ -594,7 +647,7 @@
   <section id="tab-leaderboard" style="display:none;">
     <div class="card">
       <h2 class="section-title">Master Leaderboard</h2>
-      <p class="note">Ranked by score relative to par (lowest wins — that's golf for you). This pulls in any card saved on this device, plus any cards entered manually below from groups who texted theirs in.</p>
+      <p class="note">Ranked by score relative to par — lowest wins. When the live board is on (● Live up top), each group's designated scorekeeper updates this in real time and every phone sees it. Otherwise it shows cards saved or entered on this phone.</p>
       <div id="leaderboardList"></div>
     </div>
 
@@ -610,7 +663,7 @@
 
     <div class="card">
       <h2 class="section-title">Honesty Check</h2>
-      <p class="note">Every score on this board is either entered live, hole-by-hole, with automatic par labeling — or self-reported by the group. If a number looks suspicious (looking at you, group that "shot 64")... that's between you and the 19th hole. ⛳</p>
+      <p class="note">Every group's row shows who's keeping score ("kept by …") so there's a name behind every number. Scores are entered hole-by-hole with automatic par labeling, or self-reported. If a number looks suspicious (looking at you, group that "shot 64")... that's between you and the 19th hole. ⛳</p>
     </div>
   </section>
 
@@ -669,8 +722,28 @@ const PAR_OUT = PARS.slice(0,9).reduce((a,b)=>a+b,0);   // 34
 const PAR_IN  = PARS.slice(9,18).reduce((a,b)=>a+b,0);  // 33
 const PAR_TOTAL = PAR_OUT + PAR_IN;                     // 67
 
+/* =====================================================================
+   LIVE SHARED LEADERBOARD — CONFIG
+   ---------------------------------------------------------------------
+   To turn the live board ON, paste your Firebase project's web config
+   between the braces below (see SETUP-Live-Leaderboard.md for the 10-min
+   walkthrough). Leave it blank to run exactly like before: scores stay on
+   each phone only. Nothing else needs to change.
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey:      "",
+  authDomain:  "",
+  databaseURL: "",   // <-- the one field that MUST be filled for live sync
+  projectId:   "",
+  appId:       ""
+};
+const EVENT_ID = "tommy50";        // shared data path — every phone must match this
+const SCOREKEEPER_PIN = "5050";    // give ONLY to your 6 chosen scorekeepers ("" = no code)
+
 const STORAGE_KEY = "birdie50_scores_v1";
 const SOUND_KEY = "birdie50_sound_v1";
+const SK_KEY = "birdie50_scorekeeper_v1";   // this device is a designated scorekeeper
+const SK_NAME_KEY = "birdie50_skname_v1";   // scorekeeper's name (stamped on the board)
 const TEE_KEY = "birdie50_tee_v1";
 
 /* ---------- SOUND FX (synthesized — no external audio files, works offline) ---------- */
@@ -917,6 +990,117 @@ function getGroupScores(id){
   return store[id];
 }
 
+/* ===================== LIVE SYNC (Firebase Realtime Database) =====================
+   Data model (one node per group, kept tiny and tamper-evident):
+     events/{EVENT_ID}/groups/{groupId} = {
+        scores: "4,3,,5,..."   // 18 values, blank = not entered yet (CSV survives Firebase cleanly)
+        manualTotal: 79 | null
+        by: "Mike"             // who's keeping score
+        updatedAt: <server ms>
+     }
+   Everyone subscribes (read). Only a designated scorekeeper writes their group's node. */
+let syncOn = false;            // true once Firebase is connected
+let remoteGroups = {};         // id -> remote node, the shared source of truth
+let isScorekeeper = safeGet(SK_KEY) === "yes";
+let scorekeeperName = safeGet(SK_NAME_KEY) || "";
+let fbRef = null;
+
+function scoresToCSV(arr){ return arr.map(s => (s==null ? "" : s)).join(","); }
+function csvToScores(csv){
+  const out = Array(18).fill(null);
+  if(typeof csv !== "string") return out;
+  csv.split(",").forEach((v,i)=>{ if(i<18 && v!=="") { const n=parseInt(v,10); if(!isNaN(n)) out[i]=n; } });
+  return out;
+}
+
+/* Remote-aware accessors — when live sync is on, the shared board is the truth.
+   The scorekeeper's OWN group still reads from their local working copy so typing
+   feels instant (their edits are pushed up and echoed back anyway). */
+function liveScores(id){
+  if(syncOn && !(isScorekeeper && id === currentGroupId) && remoteGroups[id]){
+    return csvToScores(remoteGroups[id].scores);
+  }
+  return getGroupScores(id).scores;
+}
+function liveManual(id){
+  if(syncOn && !(isScorekeeper && id === currentGroupId) && remoteGroups[id]){
+    const m = remoteGroups[id].manualTotal;
+    return (m===undefined || m===null) ? null : m;
+  }
+  return getGroupScores(id).manualTotal;
+}
+function liveBy(id){ return (syncOn && remoteGroups[id] && remoteGroups[id].by) ? remoteGroups[id].by : null; }
+
+/* When someone becomes the scorekeeper mid-round, continue from the live board
+   (unless this phone already has its own scores entered — never clobber that). */
+function seedLocalFromRemote(id){
+  if(!syncOn || !remoteGroups[id]) return;
+  const d = getGroupScores(id);
+  const hasLocal = d.scores.some(s => s != null) || d.manualTotal != null;
+  if(hasLocal) return;
+  d.scores = csvToScores(remoteGroups[id].scores);
+  const m = remoteGroups[id].manualTotal;
+  d.manualTotal = (m===undefined || m===null) ? null : m;
+  saveStore();
+}
+
+function initSync(){
+  // No config, SDK missing, or offline file:// → stay in local mode, silently.
+  if(!FIREBASE_CONFIG.databaseURL || typeof firebase === "undefined"){
+    updateSyncBadge("local");
+    return;
+  }
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fbRef = firebase.database().ref("events/" + EVENT_ID + "/groups");
+    syncOn = true;
+    updateSyncBadge("connecting");
+    fbRef.on("value", snap => {
+      remoteGroups = snap.val() || {};
+      updateSyncBadge("live");
+      renderLeaderboard();
+      refreshScoreView();   // keep the read-only Score tab fresh for non-scorekeepers
+    }, () => updateSyncBadge("error"));
+    // Reflect actual connection state in the badge.
+    firebase.database().ref(".info/connected").on("value", s => {
+      if(syncOn) updateSyncBadge(s.val() ? "live" : "connecting");
+    });
+  } catch(e){
+    syncOn = false;
+    updateSyncBadge("error");
+  }
+}
+
+/* Push the current scorekeeper's group up to the shared board (debounced). */
+let pushTimer = null;
+function pushGroup(id){
+  if(!syncOn || !fbRef || !isScorekeeper) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    const d = getGroupScores(id);
+    fbRef.child(String(id)).set({
+      scores: scoresToCSV(d.scores),
+      manualTotal: (d.manualTotal==null ? null : d.manualTotal),
+      by: scorekeeperName || "",
+      updatedAt: firebase.database.ServerValue.TIMESTAMP
+    }).catch(()=>{});
+  }, 250);
+}
+
+function updateSyncBadge(state){
+  const el = document.getElementById("syncBadge");
+  if(!el) return;
+  const map = {
+    local:      { t:"On this phone", c:"#8a8a8a" },
+    connecting: { t:"Connecting…",   c:"#caa400" },
+    live:       { t:"● Live",        c:"#1f6f43" },
+    error:      { t:"Offline",       c:"#c0392b" },
+  };
+  const s = map[state] || map.local;
+  el.textContent = s.t;
+  el.style.background = s.c;
+}
+
 /* ---------- SCORING LABELS ---------- */
 function labelFor(score, par){
   if(score == null) return { text: "—", cls: "empty" };
@@ -960,6 +1144,7 @@ GROUPS.forEach(g=>{
 });
 groupSelect.addEventListener("change", ()=>{
   currentGroupId = parseInt(groupSelect.value, 10);
+  if(isScorekeeper) seedLocalFromRemote(currentGroupId);
   renderGroupMeta();
   renderHoles();
   renderTotals();
@@ -1015,30 +1200,38 @@ function buildHoleRow(holeNum){
   const dec = row.querySelector(".dec");
   const inc = row.querySelector(".inc");
 
+  const stepperEl = row.querySelector(".stepper");
   function refresh(){
-    const data = getGroupScores(currentGroupId);
-    const sc = data.scores[holeNum-1];
+    const sc = liveScores(currentGroupId)[holeNum-1];
     valEl.textContent = sc == null ? "–" : sc;
     const lab = labelFor(sc, par);
     badgeEl.textContent = lab.text;
     badgeEl.className = "badge " + lab.cls;
+    const editable = canEdit();
+    stepperEl.classList.toggle("locked", !editable);
+    dec.disabled = !editable;
+    inc.disabled = !editable;
   }
   dec.addEventListener("click", ()=>{
+    if(!canEdit()) return;
     const data = getGroupScores(currentGroupId);
     let sc = data.scores[holeNum-1];
       sc = sc == null ? null : (sc <= 1 ? null : sc - 1);
     data.scores[holeNum-1] = sc;
     saveStore();
+    pushGroup(currentGroupId);
     refresh();
     renderTotals();
     playSound(labelFor(sc, par).cls);
   });
   inc.addEventListener("click", ()=>{
+    if(!canEdit()) return;
     const data = getGroupScores(currentGroupId);
     let sc = data.scores[holeNum-1];
     sc = sc == null ? par : Math.min(par + 3, sc + 1);
     data.scores[holeNum-1] = sc;
     saveStore();
+    pushGroup(currentGroupId);
     refresh();
     renderTotals();
     playSound(labelFor(sc, par).cls);
@@ -1058,8 +1251,7 @@ function renderHoles(){
 
 /* ---------- TOTALS ---------- */
 function renderTotals(){
-  const data = getGroupScores(currentGroupId);
-  const scores = data.scores;
+  const scores = liveScores(currentGroupId);
 
   function sumRange(start, end){ // inclusive 0-based indices
     let strokes = 0, par = 0, count = 0;
@@ -1145,17 +1337,21 @@ document.getElementById("manualSaveBtn").addEventListener("click", ()=>{
     window.alert("Enter a believable 18-hole total (e.g. 79).");
     return;
   }
+  if(syncOn && !isScorekeeper){
+    window.alert("Only a designated scorekeeper can update the live board. Turn on Scorekeeper Mode on the Score tab first.");
+    return;
+  }
   const data = getGroupScores(id);
   data.manualTotal = val;
   saveStore();
+  pushGroup(id);
   document.getElementById("manualStrokes").value = "";
   flashButton(document.getElementById("manualSaveBtn"), "Added ✓");
   renderLeaderboard();
 });
 
 function groupTotalFromScores(id){
-  const data = getGroupScores(id);
-  const scores = data.scores;
+  const scores = liveScores(id);   // shared board when live; local working copy otherwise
   let strokes = 0, par = 0, count = 0;
   for(let i=0;i<18;i++){
     if(scores[i] != null){ strokes += scores[i]; par += PARS[i]; count++; }
@@ -1169,21 +1365,23 @@ function renderLeaderboard(){
 
   const rows = GROUPS.map(g=>{
     const live = groupTotalFromScores(g.id);
-    const data = getGroupScores(g.id);
+    const manual = liveManual(g.id);
+    const by = liveBy(g.id);
+    const keptBy = by ? ` · kept by ${by}` : "";
     let strokes = null, rel = null, source = null;
 
     if(live.count === 18){
       strokes = live.strokes;
       rel = live.strokes - live.par;
-      source = "live (18/18)";
-    } else if(data.manualTotal != null){
-      strokes = data.manualTotal;
-      rel = data.manualTotal - PAR_TOTAL;
-      source = "self-reported";
+      source = `final (18/18)${keptBy}`;
+    } else if(manual != null){
+      strokes = manual;
+      rel = manual - PAR_TOTAL;
+      source = `self-reported${keptBy}`;
     } else if(live.count > 0){
       strokes = live.strokes;
       rel = live.strokes - live.par;
-      source = `in progress (${live.count}/18)`;
+      source = `thru ${live.count}${keptBy}`;
     }
     return { g, strokes, rel, source };
   });
@@ -1360,6 +1558,61 @@ function renderSoundboard(){
   });
 }
 
+/* ---------- SCOREKEEPER MODE ----------
+   In local mode (no live board) everyone can edit, exactly as before.
+   When the live board is on, only a designated scorekeeper can edit & push;
+   everyone else gets a read-only view that updates as scores come in. */
+function canEdit(){ return !syncOn || isScorekeeper; }
+
+function refreshScoreView(){
+  // Only auto-refresh for pure read-only viewers, so we never fight a
+  // scorekeeper who's actively tapping in their own numbers.
+  if(canEdit()) return;
+  renderHoles();
+  renderTotals();
+}
+
+const skCard = document.getElementById("skCard");
+const skToggle = document.getElementById("skToggle");
+const skSub = document.getElementById("skSub");
+function updateSkUI(){
+  if(!skCard) return;
+  skCard.style.display = syncOn ? "block" : "none"; // only meaningful with live board
+  if(isScorekeeper){
+    skToggle.textContent = "On";
+    skToggle.classList.add("on");
+    skSub.textContent = scorekeeperName
+      ? `You're keeping score as "${scorekeeperName}". Your entries post to the live board for everyone.`
+      : "You're keeping score. Your entries post to the live board for everyone.";
+  } else {
+    skToggle.textContent = "Off";
+    skToggle.classList.remove("on");
+    skSub.textContent = "View only — your group's designated scorekeeper enters the scores. Watch them roll in live.";
+  }
+}
+function setScorekeeper(on, name){
+  isScorekeeper = on;
+  safeSet(SK_KEY, on ? "yes" : "no");
+  if(on && name){ scorekeeperName = name; safeSet(SK_NAME_KEY, name); }
+  if(on) seedLocalFromRemote(currentGroupId);
+  updateSkUI();
+  renderHoles();
+  renderTotals();
+}
+if(skToggle){
+  skToggle.addEventListener("click", ()=>{
+    if(isScorekeeper){ setScorekeeper(false); return; }
+    if(SCOREKEEPER_PIN){
+      const code = window.prompt("Enter the scorekeeper code (ask Tommy):", "");
+      if(code === null) return;
+      if(code.trim() !== SCOREKEEPER_PIN){ window.alert("That code didn't match. Check with Tommy."); return; }
+    }
+    const entered = window.prompt("Your name (shown on the board as who's keeping score):", scorekeeperName || "");
+    if(entered === null) return;
+    setScorekeeper(true, entered.trim() || "Scorekeeper");
+  });
+}
+
 /* ---------- ONE-TIME FESTIVE SPLASH ---------- */
 const SPLASH_KEY = "birdie50_splash_v1";
 function spawnConfetti(){
@@ -1421,6 +1674,8 @@ renderHoles();
 renderTotals();
 renderRoster();
 renderSoundboard();
+initSync();      // connect to the live board if configured (else stays local)
+updateSkUI();    // show/hide Scorekeeper Mode based on live-board status
 </script>
 </body>
 </html>
