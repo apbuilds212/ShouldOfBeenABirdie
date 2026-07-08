@@ -1,0 +1,25 @@
+GolferID,Group,Time,Name,Confirmed
+1,1,7:00,Mav,TRUE
+2,1,7:00,Roosevelt,TRUE
+3,1,7:00,Ron,TRUE
+4,1,7:00,Henry Rock,TRUE
+5,2,7:09,Joe Mason,TRUE
+6,2,7:09,Loretta Knight,TRUE
+7,2,7:09,Owen,TRUE
+8,2,7:09,Patrick,TRUE
+9,3,7:18,Kenny Anderson,TRUE
+10,3,7:18,Chris Anderson,TRUE
+11,3,7:18,Dom Davi,TRUE
+12,3,7:18,John Farley,TRUE
+13,4,7:27,AP,TRUE
+14,4,7:27,Tommy Knight,TRUE
+15,4,7:27,Alfred Eusini,TRUE
+16,4,7:27,Mike Avella,TRUE
+17,5,7:36,Mike,TRUE
+18,5,7:36,Curt,TRUE
+19,5,7:36,Erik,TRUE
+20,5,7:36,Rob Lung,TRUE
+21,6,7:45,Brandon Mincher,TRUE
+22,6,7:45,Bryan Mincher,TRUE
+23,6,7:45,Chris Mason,TRUE
+24,6,7:45,Robin Mason,TRUE

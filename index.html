@@ -678,6 +678,11 @@
   <!-- ===================== SOUNDBOARD TAB ===================== -->
   <section id="tab-soundboard" style="display:none;">
     <div class="card">
+      <h2 class="section-title">Score Sounds</h2>
+      <p class="note">The same calls the Score tab plays automatically — fire them off whenever the moment deserves it! Don't forget to turn your 🔊 sound toggle on at the top of your screen.</p>
+      <div class="sb-grid" id="sbScoreGrid"></div>
+    </div>
+    <div class="card">
       <h2 class="section-title">Soundboard</h2>
       <p class="note">Tap a button to fire off one of Tommy's calls — perfect for celebrating a bomb or heckling a buddy in the bunker. Respects the 🔊 sound toggle up top.</p>
       <div class="sb-grid" id="sbGrid"></div>
@@ -733,8 +738,8 @@ const PAR_TOTAL = PAR_OUT + PAR_IN;                     // 67
 const FIREBASE_CONFIG = {
   apiKey:      "",
   authDomain:  "",
-  databaseURL: "",   // <-- the one field that MUST be filled for live sync
-  projectId:   "",
+  databaseURL: "https://tommy-50-default-rtdb.firebaseio.com",   // <-- the one field that MUST be filled for live sync
+  projectId:   "tommy-50",
   appId:       ""
 };
 const EVENT_ID = "tommy50";        // shared data path — every phone must match this
@@ -1295,8 +1300,9 @@ function flashButton(btn, msg){
 
 document.getElementById("shareBtn").addEventListener("click", ()=>{
   const g = GROUPS.find(g=>g.id===currentGroupId);
-  const data = getGroupScores(currentGroupId);
-  const scores = data.scores;
+  // Live-aware: on a view-only phone this shares the live board's scores,
+  // not the (empty) local copy. Scorekeepers still share their own entries.
+  const scores = liveScores(currentGroupId);
   let strokes = 0, par = 0, count = 0;
   let lines = [];
   for(let i=0;i<18;i++){
@@ -1558,6 +1564,45 @@ function renderSoundboard(){
   });
 }
 
+/* ---------- SCORE SOUNDS BOARD (same engine as the Score tab) ---------- */
+const SCORE_SOUNDS = [
+  { cls:"ace",    label:"Hole in One", emoji:"🎉", color:"var(--ace)" },
+  { cls:"eagle",  label:"Eagle",       emoji:"🦅", color:"var(--eagle)" },
+  { cls:"birdie", label:"Birdie",      emoji:"🐦", color:"var(--birdie)" },
+  { cls:"par",    label:"Par",         emoji:"✅", color:"var(--par)" },
+  { cls:"bogey",  label:"Bogey",       emoji:"😬", color:"var(--bogey)" },
+  { cls:"dbogey", label:"Double Bogey",emoji:"😩", color:"var(--dbogey)" },
+  { cls:"triple", label:"Triple Bogey",emoji:"🫣", color:"var(--triple)" },
+];
+function renderScoreSounds(){
+  const grid = document.getElementById("sbScoreGrid");
+  if(!grid) return;
+  grid.innerHTML = "";
+  SCORE_SOUNDS.forEach(s=>{
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "sb-btn";
+    btn.style.background = s.color;
+    btn.innerHTML = `<span class="emoji">${s.emoji}</span><span>${s.label}</span>`;
+    btn.addEventListener("click", ()=>{
+      if(!soundOn){
+        // sound is off — give quick visual feedback, same as the clip board
+        const orig = btn.style.background;
+        btn.style.background = "var(--grey)";
+        setTimeout(()=>{ btn.style.background = orig; }, 400);
+        return;
+      }
+      unlockAudio(); // make sure mobile audio is unlocked inside this tap
+      playSound(s.cls);
+      // brief "playing" flash — synth sounds have no end event, so time it out
+      document.querySelectorAll("#sbScoreGrid .sb-btn.playing").forEach(b=>b.classList.remove("playing"));
+      btn.classList.add("playing");
+      setTimeout(()=>{ btn.classList.remove("playing"); }, 1200);
+    });
+    grid.appendChild(btn);
+  });
+}
+
 /* ---------- SCOREKEEPER MODE ----------
    In local mode (no live board) everyone can edit, exactly as before.
    When the live board is on, only a designated scorekeeper can edit & push;
@@ -1674,6 +1719,7 @@ renderHoles();
 renderTotals();
 renderRoster();
 renderSoundboard();
+renderScoreSounds();
 initSync();      // connect to the live board if configured (else stays local)
 updateSkUI();    // show/hide Scorekeeper Mode based on live-board status
 </script>
