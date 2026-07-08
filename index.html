@@ -1041,12 +1041,20 @@ function liveBy(id){ return (syncOn && remoteGroups[id] && remoteGroups[id].by) 
 function seedLocalFromRemote(id){
   if(!syncOn || !remoteGroups[id]) return;
   const d = getGroupScores(id);
-  const hasLocal = d.scores.some(s => s != null) || d.manualTotal != null;
-  if(hasLocal) return;
-  d.scores = csvToScores(remoteGroups[id].scores);
-  const m = remoteGroups[id].manualTotal;
-  d.manualTotal = (m===undefined || m===null) ? null : m;
-  saveStore();
+  const remote = csvToScores(remoteGroups[id].scores);
+  // Merge, don't replace: keep any hole this phone already entered, but pull in
+  // every hole the shared board has that we're missing. This is the key guard —
+  // a phone with a stale single hole (or none) can no longer skip seeding and
+  // then overwrite a fuller board. Holes on the board are never dropped.
+  let changed = false;
+  for(let i=0;i<18;i++){
+    if(d.scores[i]==null && remote[i]!=null){ d.scores[i]=remote[i]; changed=true; }
+  }
+  if(d.manualTotal==null){
+    const m = remoteGroups[id].manualTotal;
+    if(!(m===undefined || m===null)){ d.manualTotal = m; changed=true; }
+  }
+  if(changed) saveStore();
 }
 
 function initSync(){
@@ -1083,9 +1091,24 @@ function pushGroup(id){
   clearTimeout(pushTimer);
   pushTimer = setTimeout(() => {
     const d = getGroupScores(id);
+    // Safety net before writing: never erase holes that already exist on the
+    // shared board. Fill any hole we're missing from the current remote record,
+    // so a sparse local copy can't clobber a fuller one. A scorekeeper's own
+    // entered value for a hole always wins (local is non-null); only genuine
+    // gaps are backfilled from the board.
+    const remote = (remoteGroups[id] && typeof remoteGroups[id].scores === "string")
+      ? csvToScores(remoteGroups[id].scores) : Array(18).fill(null);
+    const merged = d.scores.map((s,i)=> s!=null ? s : remote[i]);
+    d.scores = merged;   // keep this phone's view in step with what we send up
+    let manual = d.manualTotal;
+    if(manual==null && remoteGroups[id] && remoteGroups[id].manualTotal!=null){
+      manual = remoteGroups[id].manualTotal;
+      d.manualTotal = manual;
+    }
+    saveStore();
     fbRef.child(String(id)).set({
-      scores: scoresToCSV(d.scores),
-      manualTotal: (d.manualTotal==null ? null : d.manualTotal),
+      scores: scoresToCSV(merged),
+      manualTotal: (manual==null ? null : manual),
       by: scorekeeperName || "",
       updatedAt: firebase.database.ServerValue.TIMESTAMP
     }).catch(()=>{});
