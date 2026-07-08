@@ -35,5 +35,3 @@ Everything is contained in `index.html`, so you can open that file in any modern
 
 Plain HTML, CSS, and vanilla JavaScript — no frameworks, no build step. Firebase Realtime Database (optional) powers live sync; the Web Audio API drives tones, with pre-recorded voice clips layered on top for the reactions.
 
-<!-- NETLIFY-CD-PROOF-7f3a9 : continuous-deploy verification marker -->
-
